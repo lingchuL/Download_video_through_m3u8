@@ -6,3 +6,4 @@ To use it, you may install ffmpeg for Windows cmd at first. Before running, you 
 May work on downloading the ts files with the original video link, but the goal seems a little difficult and bothering for me right now.
 
 -- 2019.9.5 -- Uploaded a new code which may be useful when the ts files are encrypted. It can decrypt the ts files wtih the python's AES module. In a few weeks, I may make it modular to be easily imported into other projects.
+-- 2019.10.9 --Replace the old two scripts with one. Changes: 1.No more need to put the m3u8 file on desktop. Now you only need to give the program the web link of m3u8.(Having problem of how to find the link of m3u8, google might be helpful:) 2. You can download a batch of videos just giving a txt file which includes several m3u8 links. You can choose whether to download it in this default way or just download only one video a time.
