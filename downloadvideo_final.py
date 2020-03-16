@@ -19,14 +19,18 @@ import os
 from Crypto.Cipher import AES
 import binascii
 
+import pdb
 
 k=0
 
 htmls=[]
 
+yeslist=['Y','y','']
+nolist=['N','n']
 
 choice=input("是否批量下载？（Y/n）（默认批量下载）")
-if choice==('Y' or 'y' or ''):
+#print(choice)
+if choice in yeslist:
 	htmltxtpath=input("请输入保存了m3u8.txt的本地目录:")
 	htmltxtpath=htmltxtpath+"\\m3u8.txt"
 	if not os.path.exists(htmltxtpath):
@@ -37,7 +41,7 @@ if choice==('Y' or 'y' or ''):
 		for line in fhtml:
 			htmls.append(line)
 		fhtml.close()
-elif choice==('n' or 'N'):
+elif choice in nolist:
 	onehtml=input("请输入m3u8文件的地址:")
 	htmls.append(onehtml)
 
@@ -45,14 +49,14 @@ name2save=input("请输入想要保存的文件名:")
 
 
 for k in range(len(htmls)):
-	html=htmls[k]
-	print("正在下载第",k+1,"个文件")
+	html=htmls[k][:-1]
+	print("正在下载第",k+1,"个文件:",html)
 	#f=open(r"C:\Users\ASUS\Desktop\m3u8_0"+str(k),"r")
 	#m3u8=f.read()
 	
 	rm3u8=requests.get(html)
 	m3u8=rm3u8.content.decode("utf-8")
-
+	#pdb.set_trace()
 	results=re.findall(r"(?:[A-Z]|[a-z]|\d).*",m3u8)
 	#print(results)
 
@@ -84,12 +88,13 @@ for k in range(len(htmls)):
 	
 	if keyhtml:
 		keyhtml=urljoin(html,keyhtml)
-		
+		#print(keyhtml)
 		#rkey=requests.get(keyhtml,headers=header)
 		rkey=requests.get(keyhtml)
 		
 		#等会儿解密使用
 		key=rkey.text.encode("utf-8")
+		#print(key)
 		mode=AES.MODE_CBC
 		if ivresult:
 			iv=binascii.a2b_hex(ivresult)
