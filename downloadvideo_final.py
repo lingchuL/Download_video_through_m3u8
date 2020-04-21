@@ -14,6 +14,7 @@ from urllib.parse import urljoin
 import subprocess
 from accesscmd import python2cmd
 
+import winreg
 import os
 
 from Crypto.Cipher import AES
@@ -24,6 +25,44 @@ import pdb
 k=0
 
 htmls=[]
+results=[]
+
+#---------------------------------设置代理------------------------------------------
+#通过注册表获取代理设置
+def getproxyip():
+	key=winreg.OpenKey(winreg.HKEY_CURRENT_USER,r"Software\Microsoft\Windows\CurrentVersion\Internet Settings")
+	try:
+		proxy=winreg.QueryValueEx(key,"AutoConfigURL")
+		ip=proxy[0]
+		
+		rule=re.compile(r"//.*?/")
+		proxyip=rule.search(ip)
+		proxyip=proxyip[0][2:-1]
+		
+		return proxyip
+	
+	except BaseException as e:
+		proxyip="127.0.0.1:2080"
+		print("使用默认代理")
+		return proxyip
+
+
+proxyip=getproxyip()
+'''
+if proxyip!=-1:
+	proxy_dict={
+		"http":"http://"+proxyip,
+		"https":"https://"+proxyip
+	}
+else:
+	proxy_dict={}
+'''
+proxy_dict={
+	"http":"http://"+proxyip,
+	"https":"https://"+proxyip
+}
+print(proxy_dict)
+
 
 yeslist=['Y','y','']
 nolist=['N','n']
@@ -49,7 +88,7 @@ name2save=input("请输入想要保存的文件名:")
 
 
 for k in range(len(htmls)):
-	html=htmls[k][:-1]
+	html=htmls[k]
 	print("正在下载第",k+1,"个文件:",html)
 	#f=open(r"C:\Users\ASUS\Desktop\m3u8_0"+str(k),"r")
 	#m3u8=f.read()
@@ -57,8 +96,17 @@ for k in range(len(htmls)):
 	rm3u8=requests.get(html)
 	m3u8=rm3u8.content.decode("utf-8")
 	#pdb.set_trace()
-	results=re.findall(r"(?:[A-Z]|[a-z]|\d).*",m3u8)
-	#print(results)
+	
+	fm3u8=open(r"F:\\SomePythonProjects\\videos\\m3u8_temp.txt","w+")
+	fm3u8.write(m3u8)
+	fm3u8.close()
+	fm3u8r=open(r"F:\\SomePythonProjects\\videos\\m3u8_temp.txt","r")
+
+	for lline in fm3u8r:
+		#result=re.search(r"(?:[A-Z]|[a-z]|\d|\/).*",lline)
+		if lline[0]!="#":
+			results.append(lline[:-1])
+
 
 	orilinks=results
 	links=[]
@@ -80,11 +128,6 @@ for k in range(len(htmls)):
 
 
 	#----------------------------------------------构造请求头 获取360对应课程的密钥-----------------------------------
-	
-	header={}
-	
-	header2={'user-agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Safari/537.36 Core/1.70.3732.400 QQBrowser/10.5.3819.400'
-	}
 	
 	if keyhtml:
 		keyhtml=urljoin(html,keyhtml)
@@ -127,16 +170,21 @@ for k in range(len(htmls)):
 		i+=1
 		f=open(videopath+videoname,"wb+")
 		#先规范化一下路径 可能为相对路径
+
 		link=urljoin(html,link)
-		
 		#header2['path']+=link
 		#print(header2)
 		#print(link)
+		header3={
+			"referer": html,
+			"user-agent": "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.25 Safari/537.36 Core/1.70.3741.400 QQBrowser/10.5.3863.400"
+		}
+		ts=requests.get(link,headers=header3)
 		
-		ts=requests.get(link,headers=header2)
 		#有的网站有重定向 用head方法访问试试获取重定向页面
-		if ts.status_code!=requests.codes.ok:
-			ts=requests.head(link,headers=header2)
+
+		if ts.status_code!=200:
+			ts=requests.head(link,headers=header3)
 			if ts.headers['location']:
 				redirect2=ts.headers['location']
 				#print(redirect2)
