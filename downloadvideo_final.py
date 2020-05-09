@@ -1,9 +1,9 @@
 # -*-coding:utf-8 -*-
 
 #必须使用m3u8
-#目标：根据所给的m3u8地址下载视频 自动判断是否需要解密
+#目前功能：根据所给的m3u8地址下载视频 自动判断是否需要解密
 #		可从一个txt文件中读取m3u8并依次批量下载
-#未来：引入多进程/多线程的同时不要串流 并且能正常显示进度（有点难度）
+#未来：引入多进程/多线程的同时不会串流 并且能正常显示进度（有点难度）
 
 import requests
 from bs4 import BeautifulSoup
@@ -19,6 +19,7 @@ import os
 
 from Crypto.Cipher import AES
 import binascii
+import base64
 
 import pdb
 
@@ -127,20 +128,28 @@ for k in range(len(htmls)):
 	#print(ivresult)
 
 
-	#----------------------------------------------构造请求头 获取360对应课程的密钥-----------------------------------
+	#----------------------------------------------构造请求头 获取密钥-----------------------------------
 	
 	if keyhtml:
 		keyhtml=urljoin(html,keyhtml)
 		#print(keyhtml)
 		#rkey=requests.get(keyhtml,headers=header)
 		rkey=requests.get(keyhtml)
-		
+		'''
+		fkey=open(r"F:\SomePythonProjects\videos\key_temp.txt","w+")
+		fkey.write(rkey.text)
+		fkey.close()
+		'''
 		#等会儿解密使用
-		key=rkey.text.encode("utf-8")
-		#print(key)
+		# .text会返回unicode编码类型的网页内容 而.content才会返回byte类型的原始内容
+		#key=rkey.text.encode("utf-8")
+		key=rkey.content
+
 		mode=AES.MODE_CBC
 		if ivresult:
+			#print(ivresult)
 			iv=binascii.a2b_hex(ivresult)
+			#print(iv)
 			cryptos=AES.new(key,mode,iv)
 		else:
 			cryptos=AES.new(key,mode)
@@ -184,12 +193,14 @@ for k in range(len(htmls)):
 		#有的网站有重定向 用head方法访问试试获取重定向页面
 
 		if ts.status_code!=200:
+			print("网站返回值：",ts.status_code)
 			ts=requests.head(link,headers=header3)
-			if ts.headers['location']:
-				redirect2=ts.headers['location']
-				#print(redirect2)
-				ts=requests.head(redirect2)
-			else:
+			try:
+				if ts.headers['location']:
+					redirect2=ts.headers['location']
+					#print(redirect2)
+					ts=requests.head(redirect2)
+			except:
 				print("尝试一些新的方法吧")
 				exit(0)
 		#print(ts.content)
